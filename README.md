@@ -10,7 +10,13 @@ Three synchronization types are demonstrated:
 
 In all examples, a DSA and multifunction IO (MIO) device were used to retrieve voltage measurements. The code can be modified to accomodate different device types. 
  
-NOTE: to measure the phase-skew between the two measurements, the FFTW3 library is utilized (visit FFTW.org to learn more).</p>
+NOTE: to measure the phase shift between the two measurements, the FFTW3 library is utilized (visit FFTW.org to learn more).</p>
+
+## Code Output
+<p>The programs allow users to store voltage measurements and Discrete Fourier Transform (DFT) data to separate .CSV files. The console output displays the number of samples acquired for each device, the detected signal frequency in Hz, the phase shift in degrees, and the phase shift in seconds.
+  
+![Console output](https://github.com/edavis0/ni-dsa-sync/blob/main/ConsoleOutImage.png)
+  
 
 ## Links
 * To learn more about the NI Linux Real-Time OS, visit this [link](https://www.ni.com/en-us/shop/linux.html "link").
