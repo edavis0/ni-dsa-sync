@@ -12,7 +12,7 @@ In all examples, a DSA and multifunction IO (MIO) device were used to retrieve v
  
 NOTE: to measure the phase-skew between the two measurements, the FFTW3 library is utilized (visit FFTW.org to learn more).</p>
 
-## Links:
+## Links
 * To learn more about the NI Linux Real-Time OS, visit this [link](https://www.ni.com/en-us/shop/linux.html "link").
 * To learn more about device synchronization, vis this [link](https://www.ni.com/en-us/support/documentation/supplemental/10/synchronization-explained.html).
 * To learn about the basics of synchronizing DSA devices, visit this [link](https://www.ni.com/en-us/support/documentation/supplemental/10/dynamic-signal-acquisition--dsa--synchronization-basics.html "link").
