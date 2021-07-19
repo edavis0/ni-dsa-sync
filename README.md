@@ -18,7 +18,7 @@ NOTE: to measure the phase shift between the two measurements, the FFTW3 library
 ![Console output](https://github.com/edavis0/ni-dsa-sync/blob/main/ConsoleOutImage.png)
   
 ## Building
-If you would like to compile the source code on your own host machine, you must install the GNU C/C++ Compile Tools for [x64 Linux][1] or [ARMv7 Linux][2]. Make sure to include the CMakeLists.txt file and .vscode directory when building the binary.
+To compile the source code on your host machine, you must install the GNU C/C++ Compile Tools for [x64 Linux][1] or [ARMv7 Linux][2]. Make sure to include the CMakeLists.txt file and .vscode directories when building the binary (included in "samplebuildfiles").
 
 Note: It is highly recommended that you first learn how to cross-compile code and deploy to the NI Linux RTOS using Microsoft VSCode by visiting this [NI Forum Post](https://forums.ni.com/t5/NI-Linux-Real-Time-Documents/NI-Linux-Real-Time-Cross-Compiling-Using-the-NI-Linux-Real-Time/ta-p/4026449 "NI forum post").
   
