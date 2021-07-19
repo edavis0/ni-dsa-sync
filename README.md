@@ -19,13 +19,13 @@ NOTE: to measure the phase shift between the two measurements, the FFTW3 library
   
 ## Building
 If you would like to compile the source code on your own host machine, you must install the GNU C/C++ Compile Tools for [x64 Linux][1] or [ARMv7 Linux][2]. Make sure to include the CMakeLists.txt file and .vscode directory when building the binary.
+
+Note: It is highly recommended that you first learn how to cross-compile code and deploy to the NI Linux RTOS using Microsoft VSCode by visiting this [NI Forum Post](https://forums.ni.com/t5/NI-Linux-Real-Time-Documents/NI-Linux-Real-Time-Cross-Compiling-Using-the-NI-Linux-Real-Time/ta-p/4026449 "NI forum post").
   
 ## Reference Material
 * To learn more about the NI Linux Real-Time OS, visit this [link](https://www.ni.com/en-us/shop/linux.html "link").
 * To learn more about device synchronization, visit this [link](https://www.ni.com/en-us/support/documentation/supplemental/10/synchronization-explained.html).
 * To learn about the basics of synchronizing DSA devices, visit this [link](https://www.ni.com/en-us/support/documentation/supplemental/10/dynamic-signal-acquisition--dsa--synchronization-basics.html "link").
-* To learn how to cross-compile code and deploy to the NI Linux RTOS using Microsoft VSCode, visit this [link](https://forums.ni.com/t5/NI-Linux-Real-Time-Documents/NI-Linux-Real-Time-Cross-Compiling-Using-the-NI-Linux-Real-Time/ta-p/4026449 "link").
-
 
 [1]: https://www.ni.com/en-us/support/downloads/software-products/download.gnu-c---c---compile-tools-x64.html#338442 "x64 Linux" 
 [2]: https://www.ni.com/en-us/support/downloads/software-products/download.gnu-c---c---compile-tools-for-armv7.html#338448 "ARMv7 Linux" 
