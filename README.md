@@ -20,7 +20,7 @@ NOTE: to measure the phase shift between the two measurements, the FFTW3 library
 ## Building
 To compile the source code on your host machine, you must install the GNU C/C++ Compile Tools for [x64 Linux][1] or [ARMv7 Linux][2]. Make sure to include the CMakeLists.txt file and .vscode directories when building the binary (included in "samplebuildfiles").
 
-Note: It is highly recommended that you first learn how to cross-compile code and deploy to the NI Linux RTOS using Microsoft VSCode by visiting this [NI Forum Post][3]().
+Note: It is highly recommended that you first learn how to cross-compile code and deploy to the NI Linux RTOS using Microsoft VSCode by visiting this [NI Forum Post][3].
   
 ## Reference Material
 * To review NI-DAQmx C Reference Help, visit this [link][7].
