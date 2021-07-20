@@ -1,4 +1,4 @@
-# ni-dsa-sync
+# nidaqmx-dsa-sync-examples
 
 ## Overview
 <p>This repository contains example programs that demonstrate the synchronization of measurements between NI's DSA and multifunction IO (MIO) devices. C source code and associated build files are included, and they can be deployed to NI Linux Real-Time Systems.
