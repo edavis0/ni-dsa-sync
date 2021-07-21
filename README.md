@@ -10,7 +10,7 @@ Three synchronization types are demonstrated:
 
 In all examples, a DSA and a MIO device were used to retrieve voltage measurements. The code can be modified to accomodate different device types. 
  
-NOTE: to measure the phase shift between the two measurements, the FFTW3 library is utilized (visit FFTW.org to learn more).</p>
+NOTE: to measure the phase shift between the two measurements, the FFTW3 library is utilized (visit [FFTW.org][9] to learn more).</p>
 
 ## Code Output
 <p>The programs allow users to store voltage measurements and Discrete Fourier Transform (DFT) data to separate .CSV files. The console output displays the number of samples acquired for each device, the detected signal frequency in Hz, the phase shift in degrees, and the phase shift in seconds.</p>
@@ -21,6 +21,15 @@ NOTE: to measure the phase shift between the two measurements, the FFTW3 library
 To compile the source code on your host machine, you must install the GNU C/C++ Compile Tools for [x64 Linux][1] or [ARMv7 Linux][2]. Make sure to include the CMakeLists.txt file and .vscode directories when building the binary (included in "samplebuildfiles").
 
 Note: It is highly recommended that you first learn how to cross-compile code and deploy to the NI Linux RTOS using Microsoft VSCode by visiting this [NI Forum Post][3].
+
+## Installing FFTW
+Enter the following commands into the console of you NI Linux RTOS device: 
+~~~
+$ opkg update
+$ opkg list | grep fftw
+$ opkg install fftw
+~~~
+Once FFTW is installed, copy the corresponding .so and .h files (in /usr/lib/ and /usr/include/) from the RTOS device to the corresponding directories in your host machine's GNU C/C++ compile toolchain.
   
 ## Reference Material
 * To review NI-DAQmx C Reference Help, visit this [link][7].
@@ -37,3 +46,4 @@ Note: It is highly recommended that you first learn how to cross-compile code an
 [6]: https://www.ni.com/en-us/support/documentation/supplemental/10/dynamic-signal-acquisition--dsa--synchronization-basics.html "DSA synchronization whitepaper"
 [7]: https://zone.ni.com/reference/en-XX/help/370471AM-01/ "reference guide"
 [8]: https://www.ni.com/en-us/innovations/white-papers/21/hardware-drivers-the-key-to-nis-software-connectedness.html "whitepaper"
+[9]: https://www.fftw.org/ "fftw homepage"
