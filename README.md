@@ -27,7 +27,7 @@ Enter the following commands into the console of you NI Linux RTOS device:
 ~~~
 $ opkg update
 $ opkg list | grep fftw
-$ opkg install fftw
+$ opkg install libfftw
 ~~~
 Once FFTW is installed, copy the corresponding .so and .h files (in /usr/lib/ and /usr/include/) from the RTOS device to the corresponding directories in your host machine's GNU C/C++ compile toolchain.
   
