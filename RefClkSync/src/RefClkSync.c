@@ -73,7 +73,6 @@ static TaskHandle DSATaskHandle=0, MIOTaskHandle=0;
 int32 CVICALLBACK EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEventType, uInt32 nSamples, void *callbackData);
 int32 CVICALLBACK DoneCallback(TaskHandle taskHandle, int32 status, void *callbackData);
 void DFT(double *dsaData, double *mioData, double sampleRate, long long int sampsPerChan, int precision, FILE *file, double *measuredPhaseSkewDeg, double *measuredPhaseSkewSec, double *measuredFreq);
-void DFTv2(double *dsaData, double *mioData, double sampleRate, long long int sampsPerChan, int precision, FILE *file, double *measuredPhaseSkewDeg, double *measuredPhaseSkewSec, double *measuredFreq);
 void StoreData(int arraySize, double *dataToAllocate, double *output);
 double NormalizePhaseAngleDifference(double phase);
 
@@ -233,7 +232,7 @@ int32 CVICALLBACK EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEvent
 	DAQmxErrChk (DAQmxReadAnalogF64(MIOTaskHandle,sampsPerChan,timeout,fillMode,mioData,sampsPerChan,&mioRead,NULL));
 
 	// Perform DFT
-	DFTv2(dsaData,mioData,sampleRate,sampsPerChan,data->dftData.precision,data->dftData.file,&measuredPhaseSkewDeg,&measuredPhaseSkewSec,&measuredFreq);
+	DFT(dsaData,mioData,sampleRate,sampsPerChan,data->dftData.precision,data->dftData.file,&measuredPhaseSkewDeg,&measuredPhaseSkewSec,&measuredFreq);
 
 	// Write to voltage data to CSV 
 	fprintf(data->voltageData.file,"Time (s),DSA Data (V),MIO Data (V)\n");
@@ -302,7 +301,7 @@ Error:
 }
 
 // Calculates a discrete Fourier transform using the FFTW libary
-void DFTv2(double *dsaData, double *mioData, double sampleRate, long long int sampsPerChan, int precision, FILE *file, double *measuredPhaseSkewDeg, double *measuredPhaseSkewSec, double *measuredFreq)
+void DFT(double *dsaData, double *mioData, double sampleRate, long long int sampsPerChan, int precision, FILE *file, double *measuredPhaseSkewDeg, double *measuredPhaseSkewSec, double *measuredFreq)
 {
 	
 	// Calculate in and out array sizes
