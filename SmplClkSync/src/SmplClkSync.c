@@ -248,7 +248,7 @@ int32 CVICALLBACK EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEvent
 		dsaTotalRead += dsaRead;
 	if( mioRead>0 )
 		mioTotalRead += mioRead;
-	printf("%d\t\t\t%d\t\t\t%5.2f\t\t\t\t\t%2.2f\t\t\t%1.2e\r", (int)dsaTotalRead,(int)mioTotalRead, measuredFreq, measuredPhaseSkewDeg, measuredPhaseSkewSec);
+	printf("%d\t\t\t%d\t\t\t%5.0f\t\t\t\t\t%2.2f\t\t\t%1.2e\r", (int)dsaTotalRead,(int)mioTotalRead, measuredFreq, measuredPhaseSkewDeg, measuredPhaseSkewSec);
 	fflush(stdout);
 
 Error:
