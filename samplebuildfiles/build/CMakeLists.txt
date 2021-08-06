@@ -16,14 +16,14 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 # project specific information
 cmake_minimum_required(VERSION 3.7.2)
-project(ProjectName)
+project(ProjectName) # NOTE: Edit ProjectName to a project name of your choosing
 set(EXECUTABLE_OUTPUT_PATH bin)
 set(CMAKE_BUILD_TYPE Debug)
 
 include_directories(${toolchain_path}/core2-64-nilrt-linux/usr/include)
-add_executable(ProjectName ../src/SourceCodeName.c)
+add_executable(ProjectName ../src/SourceCodeName.c) # NOTE: Replace ProjectName and SourceCodeName to match your chosen project name and source code name
 
-# Note: ensure that you copy the contents of the real-time system's /usr/local/natinst/lib folder into the respective folder in your development toolchain
+# NOTE: ensure that you copy the contents of the real-time system's /usr/lib/x86_64-linux-gnu/ and /usr/local/natinst/lib folders and into the respective folder in your development toolchain
 add_library(libm SHARED IMPORTED)
 set_property(TARGET libm PROPERTY IMPORTED_LOCATION ${toolchain_path}/core2-64-nilrt-linux/usr/lib/libm.so)
 add_library(libfftw3 SHARED IMPORTED)
@@ -60,4 +60,4 @@ add_library(nidaqmx SHARED IMPORTED)
 set_property(TARGET nidaqmx PROPERTY IMPORTED_LOCATION ${toolchain_path}/core2-64-nilrt-linux/usr/lib/x86_64-linux-gnu/libnidaqmx.so)
 
 target_link_libraries(ProjectName libm libfftw3 nitargetcfg nirocoapi niprtsiu nisysapi niAvahiClient nimru2u nimhwcfu nimxdfu nicrtsiu 
-                        nidimu nidmxfu nimdbgu niorbu nipalu nidaqmx )
+                        nidimu nidmxfu nimdbgu niorbu nipalu nidaqmx ) # NOTE: Replace ProjectName to match your chosen project name
