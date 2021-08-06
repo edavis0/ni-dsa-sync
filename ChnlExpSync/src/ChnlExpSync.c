@@ -60,7 +60,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <NIDAQmx.h>
 #include <math.h>
 #include <fftw3.h>
@@ -74,7 +73,7 @@ static TaskHandle taskHandle=0;
 
 int32 CVICALLBACK EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEventType, uInt32 nSamples, void *callbackData);
 int32 CVICALLBACK DoneCallback(TaskHandle taskHandle, int32 status, void *callbackData);
-void DFT(double *dsaData, double *mioData, double sampleRate, long long int sampsPerChan, FILE *file, double *measuredPhaseSkewDeg, double *measuredPhaseSkewSec, double *measuredFreq);
+void DFT(double *dsaData, double *mioData, double sampleRate, long long int sampsPerChan, int precision, FILE *file, double *measuredPhaseSkewDeg, double *measuredPhaseSkewSec, double *measuredFreq);
 void StoreData(int arraySize, double *dataToAllocate, double *output);
 double NormalizePhaseAngleDifference(double phase);
 
@@ -91,16 +90,21 @@ const int32 terminalConfig = DAQmx_Val_Cfg_Default; // The input terminal config
 const float64 minVal = -5.0; // The minimum value, in units, that you expect to measure.
 const float64 maxVal = 5.0; // The maximum value, in units, that you expect to measure.
 const int32 units = DAQmx_Val_Volts; // The units to use to return the voltage measurements. Options: DAQmx_Val_Volts, DAQmx_Val_FromCustomScale
+
 // DAQmxCfgSampClkTiming Options
 const int32 activeEdge = DAQmx_Val_Rising; // Specifies on which edge of the clock to acquire or generate samples. Options: DAQmx_Val_Rising, DAQmx_Val_Falling
 const int32 sampleMode = DAQmx_Val_ContSamps; // Specifies whether the task acquires or generates samples continuously or if it acquires or generates a finite number of samples. Options: DAQmx_Val_FiniteSamps, DAQmx_Val_ContSamps, DAQmx_Val_HWTimedSinglePoint
+
 // DAQmxSetAIRemoveFilterDelay Options
 const char *dsaDeviceName = "Dev3/ai0"; // Specifies the device terminal to enable filter delay removal on.
+
 // Reference Clock Options
 const char *refClkSrc = "PXI_Clk100"; // Specifies the terminal of the signal to use as the Reference Clock.
+
 // DAQmxRegisterEveryNSamplesEvent Options
 const int32 everyNsamplesEventType = DAQmx_Val_Acquired_Into_Buffer; // The type of event you want to receive. Options: DAQmx_Val_Acquired_Into_Buffer, DAQmx_Val_Transferred_From_Buffer
 const uInt32 options = 0; // Use this parameter to set certain options. Pass a value of zero if no options need to be set. Options: 0, DAQmx_Val_SynchronousEventCallbacks
+
 // DAQmxReadAnalogF64 Options
 const float64 timeout = 10.0; // The amount of time, in seconds, to wait for the function to read the sample(s).
 const bool32 fillMode = DAQmx_Val_GroupByScanNumber; // Specifies whether or not the samples are interleaved. Options: DAQmx_Val_GroupByChannel, DAQmx_Val_GroupByScanNumber
@@ -109,18 +113,25 @@ const bool32 fillMode = DAQmx_Val_GroupByScanNumber; // Specifies whether or not
 FILE *dataFile, *dftFile;
 const char *voltageDataFileName = "../../VoltageData.csv"; // Measurement data is stored in this CSV file
 const char *dftDataFileName = "../../DFTData.csv"; // DFT data is stored in this CSV file
+const int voltageDataFileLogPrecision = 2; // Precision at which to store the voltage data
+const int dftDataFileLogPrecision = 3; // Precision at which to store the dft data
+typedef struct {
+	FILE *file;
+	int precision;
+} LogFile;
+typedef struct {
+	LogFile voltageData;
+	LogFile dftData;
+} Logs;
+typedef Logs *LogsPtr;
 
 int main(void)
 {
 	int32       error=0;
 	char        errBuff[2048]={'\0'};
 	char	    channels[256],trigName[256];
-
-	// Create/replace CSV files to store voltage and DFT data.
-	dataFile = fopen(voltageDataFileName, "w");
-	fclose(dataFile);
-	dftFile = fopen(dftDataFileName, "w");
-	fclose(dftFile);
+	LogFile 	voltageDataFile, dftDataFile;
+	Logs		logData;
 
  	/*********************************************/
 	// DAQmx Configure Code
@@ -131,9 +142,19 @@ int main(void)
 	DAQmxErrChk (DAQmxSetAIRemoveFilterDelay(taskHandle,dsaDeviceName,1)); 
 
 	DAQmxErrChk (DAQmxSetRefClkSrc(taskHandle, refClkSrc));
+
+	// Create two CSV files and set precision
+	voltageDataFile.file = fopen(voltageDataFileName, "w");
+	dftDataFile.file = fopen(dftDataFileName, "w");
+	voltageDataFile.precision = voltageDataFileLogPrecision;
+	dftDataFile.precision = dftDataFileLogPrecision;
+
+	// Store information in a single struct
+	logData.voltageData = voltageDataFile;
+	logData.dftData = dftDataFile;
 	
-	DAQmxErrChk (DAQmxRegisterEveryNSamplesEvent(taskHandle,everyNsamplesEventType,sampsPerChan,options,EveryNCallback,NULL));
-	DAQmxErrChk (DAQmxRegisterDoneEvent(taskHandle,0,DoneCallback,NULL));
+	DAQmxErrChk (DAQmxRegisterEveryNSamplesEvent(taskHandle,everyNsamplesEventType,sampsPerChan,options,EveryNCallback,&logData));
+	DAQmxErrChk (DAQmxRegisterDoneEvent(taskHandle,0,DoneCallback,&logData));
 
 	/*********************************************/
 	// DAQmx Start Code
@@ -176,12 +197,15 @@ int32 CVICALLBACK EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEvent
 	char            errBuff[2048]={'\0'};
 	static int32    dsaTotalRead=0,mioTotalRead=0;
 	int32           samplesReadPerChan,dsaRead,mioRead;
-	float64         data[2*sampsPerChan],dsaData[sampsPerChan],mioData[sampsPerChan],timeData[sampsPerChan];
+	float64         totalData[2*sampsPerChan],dsaData[sampsPerChan],mioData[sampsPerChan],timeData[sampsPerChan];
+
+	// Implicitly cast LogsPtr type def to pointer "data"
+	LogsPtr data = (LogsPtr)callbackData;
 
 	/*********************************************/
 	// DAQmx Read Code
 	/*********************************************/
-	DAQmxErrChk (DAQmxReadAnalogF64(taskHandle,sampsPerChan,timeout,fillMode,data,2*sampsPerChan,&samplesReadPerChan,NULL));
+	DAQmxErrChk (DAQmxReadAnalogF64(taskHandle,sampsPerChan,timeout,fillMode,totalData,2*sampsPerChan,&samplesReadPerChan,NULL));
 	
 	// Assign the amount of samples read to the respective variables
 	if (samplesReadPerChan = sampsPerChan)
@@ -194,33 +218,30 @@ int32 CVICALLBACK EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEvent
 	int j = 0;
 	for (int i = 0; i < sampsPerChan; i++)
 	{
-		dsaData[i] = data[j];
-		mioData[i] = data[j+1];
+		dsaData[i] = totalData[j];
+		mioData[i] = totalData[j+1];
 		j = j + 2;
 	}
 
 	// Perform DFT
-	DFT(dsaData,mioData,sampleRate,sampsPerChan,dftFile,&measuredPhaseSkewDeg,&measuredPhaseSkewSec,&measuredFreq);
+	DFT(dsaData,mioData,sampleRate,sampsPerChan,data->dftData.precision,data->dftData.file,&measuredPhaseSkewDeg,&measuredPhaseSkewSec,&measuredFreq);
 
 	// Write to voltage data to CSV 
-	dataFile = fopen(voltageDataFileName, "a");
-	fprintf(dataFile,"Time (s),DSA Data (V),MIO Data (V)\n");
+	fprintf(data->voltageData.file,"Time (s),DSA Data (V),MIO Data (V)\n");
 	for (int i = 0; i < sampsPerChan; i++)
 	{
 		// Build time array
 		timeData[i] = i * (1/sampleRate);
 
 		// Print voltage data to CSV file
-		fprintf(dataFile,"%0.6f,%2.6f,%2.6f\n",timeData[i],dsaData[i],mioData[i]);
+		fprintf(data->voltageData.file,"%0.*f,%2.*f,%2.*f\n",data->voltageData.precision,timeData[i],data->voltageData.precision,dsaData[i],data->voltageData.precision,mioData[i]);
 	}
-	fclose(dataFile);
-
 	// Calculate and print sample acquisition totals and DFT information
 	if( dsaRead>0 )
 		dsaTotalRead += dsaRead;
 	if( mioRead>0 )
 		mioTotalRead += mioRead;
-	printf("%d\t\t\t%d\t\t\t%5.2f\t\t\t\t\t%2.2f\t\t\t%1.2e\r", (int)dsaTotalRead,(int)mioTotalRead, measuredFreq, measuredPhaseSkewDeg, measuredPhaseSkewSec);
+	printf("%d\t\t\t%d\t\t\t%5.0f\t\t\t\t\t%2.2f\t\t\t%1.2e\r", (int)dsaTotalRead,(int)mioTotalRead, measuredFreq, measuredPhaseSkewDeg, measuredPhaseSkewSec);
 	fflush(stdout);
 
 Error:
@@ -243,8 +264,14 @@ int32 CVICALLBACK DoneCallback(TaskHandle taskHandle, int32 status, void *callba
 	int32   error=0;
 	char    errBuff[2048]={'\0'};
 
+	LogsPtr data = (LogsPtr)callbackData;
+
 	// Check to see if an error stopped the task.
 	DAQmxErrChk (status);
+
+	// Close CSV files
+	fclose(data->voltageData.file);
+	fclose(data->dftData.file);
 
 Error:
 	if( DAQmxFailed(error) ) {
@@ -261,11 +288,15 @@ Error:
 }
 
 // Calculates a discrete Fourier transform using the FFTW libary
-void DFT(double *dsaData, double *mioData, double sampleRate, long long int sampsPerChan, FILE *file, double *measuredPhaseSkewDeg, double *measuredPhaseSkewSec, double *measuredFreq)
+void DFT(double *dsaData, double *mioData, double sampleRate, long long int sampsPerChan, int precision, FILE *file, double *measuredPhaseSkewDeg, double *measuredPhaseSkewSec, double *measuredFreq)
 {
+	
 	// Calculate in and out array sizes
 	int n = sampsPerChan;
 	int nc = (n/2)+1;
+
+	// Calculate maximum precision of frequency bins
+	double binPrecision = sampleRate/sampsPerChan;
 
 	// Instantiate variables for FFTW
 	double *dsaInput, *mioInput;
@@ -275,24 +306,27 @@ void DFT(double *dsaData, double *mioData, double sampleRate, long long int samp
 	// Allocated input and output arrays
 	dsaInput = (double*)fftw_malloc(sizeof(double) * n);
 	mioInput = (double*)fftw_malloc(sizeof(double) * n);
-	dsaOutput = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nc);
-	mioOutput = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nc);
-
-	// Instantiate plan for a 1D DFT of the real data
-	dsaDFT = fftw_plan_dft_r2c_1d(n, dsaInput, dsaOutput, FFTW_ESTIMATE);
-	mioDFT = fftw_plan_dft_r2c_1d(n, mioInput, mioOutput, FFTW_ESTIMATE);
+	dsaOutput = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * nc);
+	mioOutput = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * nc);
 
 	// Store real data in the input arrays
-	StoreData(n, dsaData, dsaInput);
-	StoreData(n, mioData, mioInput);
+	StoreData(n,dsaData,dsaInput);
+	StoreData(n,mioData,mioInput);
+
+	// Instantiate plan for a 1D DFT of the real data
+	dsaDFT = fftw_plan_dft_r2c_1d(n,dsaInput,dsaOutput,FFTW_ESTIMATE);
+	mioDFT = fftw_plan_dft_r2c_1d(n,mioInput,mioOutput,FFTW_ESTIMATE);
 
 	// Execute the DFTs
 	fftw_execute(dsaDFT);
 	fftw_execute(mioDFT);
 	
 	// Open CSV file
-	file = fopen(dftDataFileName, "a");
 	fprintf(file,"Frequency (Hz),DSA Magnitude,DSA Amplitude (V),MIO Magnitude,MIO Amplitude (V)\n");
+
+	// Insantiate variables to track the frequency in a measured signal
+	int maxMagnitudeIndex = 0;
+	int maxMagnitude = 0;
 
 	// Calculate and store the frequency components
 	for (int i = 0; i < nc; i++)
@@ -303,33 +337,47 @@ void DFT(double *dsaData, double *mioData, double sampleRate, long long int samp
 		double mioRealComp = mioOutput[i][REAL];
 		double mioImagComp = mioOutput[i][IMAG];
 		
-		// Calculate the frequency, magnitude, amplitude, and phase from the DFT data
-		double freq = i * (sampleRate/sampsPerChan);
+		// Calculate the frequency, magnitude, and amplitude from the DFT data
+		double freq = i * binPrecision;
 		double dsaMagnitude = sqrt((dsaRealComp*dsaRealComp) + (dsaImagComp*dsaImagComp));
 		double mioMagnitude = sqrt((mioRealComp*mioRealComp) + (mioImagComp*mioImagComp));
 		double dsaAmplitude = dsaMagnitude * 2 / n;
 		double mioAmplitude = mioMagnitude * 2 / n;
-		double dsaPhase = atan2(dsaImagComp,dsaRealComp) * (180/PI);
-		double mioPhase = atan2(mioImagComp,mioRealComp) * (180/PI);
 
-		// Calculate phase skew between DSA and MIO device
-		double phaseSkewDeg = NormalizePhaseAngleDifference(dsaPhase-mioPhase); // phase skew in degrees
-		double phaseSkewSec = ((dsaPhase-mioPhase)/360) * (1/freq); // phase skew in seconds
+		// Write DFT data to CSV file
+		fprintf(file,"%5.2f,%5.*f,%5.*f,%5.*f,%5.*f\n",freq,precision,dsaMagnitude,precision,dsaAmplitude,precision,mioMagnitude,precision,mioAmplitude);
 
-		// Assign phase skew value to be returned
-		if ( dsaMagnitude >= 5 &&  mioMagnitude >= 5)
+		// Find at which frequency bin the highest magnitude exists
+		if ( dsaMagnitude >= maxMagnitude && mioMagnitude >= maxMagnitude)
 		{
-			*measuredPhaseSkewDeg = phaseSkewDeg;
-			*measuredPhaseSkewSec = phaseSkewSec;
-			*measuredFreq = freq;
+			maxMagnitude = dsaMagnitude;
+			maxMagnitudeIndex = i;
 		}
-
-		// Write to DFT data to CSV file
-		fprintf(file,"%5.2f,%5.4f,%5.4f,%5.4f,%5.4f\n", freq, dsaMagnitude, dsaAmplitude, mioMagnitude, mioAmplitude);
 	}
 
+	// Assign variables for real and imaginary components at the maximum frequency
+	double dsaMaxRealComp = dsaOutput[maxMagnitudeIndex][REAL];
+	double dsaMaxImagComp = dsaOutput[maxMagnitudeIndex][IMAG];
+	double mioMaxRealComp = mioOutput[maxMagnitudeIndex][REAL];
+	double mioMaxImagComp = mioOutput[maxMagnitudeIndex][IMAG];
+
+	// Calculate frequency of measured signal
+	double maxFreq = maxMagnitudeIndex * binPrecision;
+
+	// Calculate phase
+	double dsaPhase = atan2(dsaMaxImagComp,dsaMaxRealComp) * (180/PI);
+	double mioPhase = atan2(mioMaxImagComp,mioMaxRealComp) * (180/PI);
+
+	// Calculate phase skew between DSA and MIO device
+	double phaseSkewDeg = NormalizePhaseAngleDifference(dsaPhase-mioPhase); // phase skew in degrees
+	double phaseSkewSec = ((dsaPhase-mioPhase)/360) * (1/maxFreq); // phase skew in seconds
+
+	// Assign values to be displayed on the console
+	*measuredPhaseSkewDeg = phaseSkewDeg;
+	*measuredPhaseSkewSec = phaseSkewSec;
+	*measuredFreq = maxFreq;
+
 	// Free the resources
-	fclose(file);
 	fftw_destroy_plan(dsaDFT);
 	fftw_destroy_plan(mioDFT);
 	fftw_free(dsaInput); 
