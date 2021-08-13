@@ -70,8 +70,8 @@ static TaskHandle DSATaskHandle=0, MIOTaskHandle=0;
 #define IMAG 1
 #define PI 3.14159265
 
-int32 CVICALLBACK EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEventType, uInt32 nSamples, void *callbackData);
-int32 CVICALLBACK DoneCallback(TaskHandle taskHandle, int32 status, void *callbackData);
+int32 EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEventType, uInt32 nSamples, void *callbackData);
+int32 DoneCallback(TaskHandle taskHandle, int32 status, void *callbackData);
 void DFT(double *dsaData, double *mioData, double sampleRate, long long int sampsPerChan, int precision, FILE *file, double *measuredPhaseSkewDeg, double *measuredPhaseSkewSec, double *measuredFreq);
 void StoreData(int arraySize, double *dataToAllocate, double *output);
 double NormalizePhaseAngleDifference(double phase);
@@ -213,7 +213,7 @@ Error:
 	return 0;
 }
 
-int32 CVICALLBACK EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEventType, uInt32 nSamples, void *callbackData)
+int32 EveryNCallback(TaskHandle taskHandle, int32 everyNsamplesEventType, uInt32 nSamples, void *callbackData)
 {
 	int32           error=0;
 	double 			measuredPhaseSkewDeg=0,measuredPhaseSkewSec=0,measuredFreq=0;
@@ -272,7 +272,7 @@ Error:
 	return 0;
 }
 
-int32 CVICALLBACK DoneCallback(TaskHandle taskHandle, int32 status, void *callbackData)
+int32 DoneCallback(TaskHandle taskHandle, int32 status, void *callbackData)
 {
 	int32   error=0;
 	char    errBuff[2048]={'\0'};
