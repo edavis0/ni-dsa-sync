@@ -21,7 +21,7 @@ NOTE: to measure the phase shift between the two measurements, the FFTW3 library
 ## Building for NI Linux Real-Time OS
 To compile the source code on your host machine, you must install the GNU C/C++ Compile Tools for [x64 Linux][1] or [ARMv7 Linux][2]. Make sure to include the CMakeLists.txt file and .vscode directories when building the binary (included in "samplebuildfiles").
 
-It is recommended you first learn how to cross-compile code and deploy to the NI Linux RTOS using Microsoft VSCode by visiting this [NI Forum Post][3]. Then, refer to this [NI KnowledgeBase Article][10] for extra tips.
+It is recommended you first learn how to cross-compile code and deploy to the NI Linux RTOS using Microsoft VSCode by visiting this [NI Forum Post][3]. Then, refer to this [NI KnowledgeBase Article][10] and this [repository][11] for extra tips.
 
 ## Installing FFTW
 Enter the following commands into the console of you NI Linux RTOS device: 
@@ -49,3 +49,4 @@ Once FFTW is installed, copy the corresponding .so and .h files (in /usr/lib/ an
 [8]: https://www.ni.com/en-us/innovations/white-papers/21/hardware-drivers-the-key-to-nis-software-connectedness.html "whitepaper"
 [9]: https://www.fftw.org/ "fftw homepage"
 [10]: https://knowledge.ni.com/KnowledgeArticleDetails?id=kA03q000000YLPeCAO&l=en-US "NI KnowledgeBase Article"
+[11]: https://github.com/edavis0/nidaqmx-c-examples/blob/main/CrossCompileTips/NI-DAQmxLinuxCross-compileTips.md "NI DAQmx Examples"
